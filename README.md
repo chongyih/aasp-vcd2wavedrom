@@ -4,7 +4,7 @@ Python script to transform a VCD file to [wavedrom](https://wavedrom.com/) forma
 
 ```
 usage: vcd2wavedrom.py [-h] -i INPUT [-o OUTPUT] [-c CONFIGFILE] [-r SAMPLERATE] [-t MAXTIME]
-                       [-f OFFSET] [-z HSCALE] [--top]
+                       [-f OFFSET] [-z HSCALE] [--top] [--aasp]
 
 Transform VCD to wavedrom
 
@@ -25,6 +25,7 @@ options:
   -z HSCALE, --hscale HSCALE
                         Horizontal scale
   --top                 Only output the top level signals
+  --aasp                Use AASP format for output
 
 ```
 

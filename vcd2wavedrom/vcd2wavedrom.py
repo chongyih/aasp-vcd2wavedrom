@@ -100,6 +100,9 @@ class VCD2Wavedrom:
         self.config['clocks'] = []
         self.config['signal'] = []
 
+        if (vcd_dict is None) or (len(vcd_dict) == 0):
+            raise ValueError("AASP mode likely not supported!")
+
         for isig, wave in enumerate(vcd_dict):
             wave_points = vcd_dict[wave]
             if len(wave_points) == 0:
@@ -303,16 +306,28 @@ class VCD2Wavedrom:
     def execute(self, auto):
         vcd = VCDVCD(vcd_string=self.config['input_text'])
         timescale = int(vcd.timescale['magnitude'])
+        aasp = self.config['aasp']
+        if aasp:
+            level = -1
+        else:
+            level = 0
         vcd_dict = {}
         vcd_dict_types = {}
         vcd = vcd.data
         for i in vcd:
             if i != '$end':
-                if int(vcd[i].size) > 1:
-                    vcd_dict_types[vcd[i].references[0]] = 'bus'
+                if aasp:
+                    if vcd[i].references[level].count('.') > 1:
+                        signal_name = vcd[i].references[level].split('.')[-1]
+                    else:
+                        continue
                 else:
-                    vcd_dict_types[vcd[i].references[0]] = 'signal'
-                vcd_dict[vcd[i].references[0]] = [list(tv) for tv in vcd[i].tv]
+                    signal_name = vcd[i].references[level]
+                if int(vcd[i].size) > 1:
+                    vcd_dict_types[signal_name] = 'bus'
+                else:
+                    vcd_dict_types[signal_name] = 'signal'
+                vcd_dict[signal_name] = [list(tv) for tv in vcd[i].tv]
 
         if auto:
             timescale = self.auto_config_waves(vcd_dict)
@@ -339,6 +354,8 @@ def main(argv):
         help="Horizontal scale")
     parser.add_argument('--top', dest='top', action="store_true", default=False,
         help="Only output the top level signals")
+    parser.add_argument('--aasp', dest='aasp', action="store_true", default=False,
+        help="Configure output for AASP")
     
     args = parser.parse_args(argv)
     args.input = os.path.abspath(os.path.join(os.getcwd(), args.input))
@@ -359,10 +376,11 @@ def main(argv):
 
     config['output'] = args.output
     config['top'] = args.top
+    config['aasp'] = args.aasp
     if args.samplerate is not None:
         config['samplerate'] = args.samplerate
     if args.maxtime is not None:
-        config['maxtime'] = args.maxtime 
+        config['maxtime'] = args.maxtime
     if args.offset is not None:
         config['offset'] = args.offset
     if args.hscale is not None:
